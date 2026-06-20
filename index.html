@@ -156,6 +156,30 @@
         </div>
     </div>
 
+    <!-- Difficulty Selection Screen -->
+    <div id="difficultyScreen" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-lg max-w-sm border border-slate-700 shadow-2xl">
+            <h1 class="text-4xl font-bold text-center mb-2 text-emerald-400">Select Level</h1>
+            <p class="text-slate-300 text-center mb-8 text-sm">Choose your difficulty</p>
+            
+            <div class="space-y-4">
+                <button id="beginnerBtn" class="w-full p-6 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg transition transform hover:scale-105 border-2 border-blue-400">
+                    <p class="text-lg font-bold text-white mb-1">🌱 Beginner</p>
+                    <p class="text-xs text-blue-100">Grade 11-12 NCERT Concepts</p>
+                </button>
+                
+                <button id="advancedBtn" class="w-full p-6 bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-lg transition transform hover:scale-105 border-2 border-purple-400">
+                    <p class="text-lg font-bold text-white mb-1">⚡ Advanced</p>
+                    <p class="text-xs text-purple-100">Research Methods & Statistics</p>
+                </button>
+            </div>
+
+            <button id="backToWelcomeBtn" class="w-full mt-6 px-6 py-2 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg font-semibold transition text-sm">
+                ← Back
+            </button>
+        </div>
+    </div>
+
     <!-- Game Screen -->
     <div id="gameScreen" class="hidden min-h-screen flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-3xl">
@@ -231,11 +255,24 @@
             matched: [],
             currentPlayer: 1,
             scores: [0, 0],
-            isLocked: false
+            isLocked: false,
+            difficulty: 'advanced'
         };
 
-        // Concept pairs (8 pairs)
-        const pairs = [
+        // BEGINNER: Grade 11-12 NCERT Psychology Concepts (8 pairs)
+        const beginnerPairs = [
+            { term: "Sensation", def: "Detection of physical stimuli by sensory organs" },
+            { term: "Perception", def: "Process of organizing and interpreting sensory information" },
+            { term: "Memory", def: "Retention and retrieval of information over time" },
+            { term: "Motivation", def: "Drive or reason for behavior towards a goal" },
+            { term: "Emotion", def: "Subjective feeling with physiological response" },
+            { term: "Stress", def: "Response to demands or threats to well-being" },
+            { term: "Personality", def: "Stable patterns of thoughts, feelings, and behaviors" },
+            { term: "Attitude", def: "Evaluative judgment about objects or people" }
+        ];
+
+        // ADVANCED: Research Methods & Statistics (8 pairs)
+        const advancedPairs = [
             { term: "Type I Error", def: "False Positive: Rejecting true null" },
             { term: "Type II Error", def: "False Negative: Failing to reject false null" },
             { term: "p-hacking", def: "Manipulating data until significant" },
@@ -256,6 +293,9 @@
 
             const gridEl = document.getElementById('gameGrid');
             gridEl.innerHTML = '';
+
+            // Select pairs based on difficulty
+            const pairs = game.difficulty === 'beginner' ? beginnerPairs : advancedPairs;
 
             // Create card deck: each pair appears as [term, definition]
             let deck = [];
@@ -351,7 +391,7 @@
             document.getElementById('p2Score').textContent = game.scores[1];
 
             // Pairs left
-            document.getElementById('pairsLeftDisplay').textContent = 8 - (game.matched.length / 2);
+            document.getElementById('pairsLeftDisplay').textContent = 18 - (game.matched.length / 2);
 
             // Turn indicator
             const turnText = game.currentPlayer === 1 ? "Player 1's Turn" : "Player 2's Turn";
@@ -397,15 +437,33 @@
         // Event listeners
         document.getElementById('startBtn').addEventListener('click', () => {
             document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('difficultyScreen').classList.remove('hidden');
+        });
+
+        document.getElementById('beginnerBtn').addEventListener('click', () => {
+            game.difficulty = 'beginner';
+            document.getElementById('difficultyScreen').classList.add('hidden');
             document.getElementById('gameScreen').classList.remove('hidden');
             initGame();
+        });
+
+        document.getElementById('advancedBtn').addEventListener('click', () => {
+            game.difficulty = 'advanced';
+            document.getElementById('difficultyScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            initGame();
+        });
+
+        document.getElementById('backToWelcomeBtn').addEventListener('click', () => {
+            document.getElementById('difficultyScreen').classList.add('hidden');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
         });
 
         document.getElementById('resetBtn').addEventListener('click', initGame);
 
         document.getElementById('playAgainBtn').addEventListener('click', () => {
             document.getElementById('gameOverScreen').classList.add('hidden');
-            initGame();
+            document.getElementById('difficultyScreen').classList.remove('hidden');
         });
     </script>
 
