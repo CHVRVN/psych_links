@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Thematic Codebook — Teacher Interview</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="bar"><div class="bar-inner">
+  <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+  <div class="xp" id="xpCounter">Codes explored: 0/15</div>
+</div></div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="tag">Qualitative Coding</div>
+    <h1>Thematic Codebook</h1>
+    <p class="lede">15 codes, each grounded in a direct quote from the transcript. Tap a card to flip it.</p>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <div class="grid" id="grid"></div>
+
+  <div class="box warn">
+    <h3>⚡ Cross-cutting tension</h3>
+    <p style="font-size:0.9rem;">Codes 1, 13 and 14 converge on a tension between protective welfare mechanisms and their misuse or stigmatization — the same system (disability certification, grace marks) meant to support vulnerable students is described as both exploited (from earlier neglect) and avoided (fear of long-term labeling).</p>
+  </div>
+
+  <footer>Coded from the uploaded interview transcript · click-to-reveal format</footer>
+</div>
+
+<script src="assets/nav.js"></script>
+<script>
+const codes = [
+  {n:1, cat:"family", name:"Parental Involvement & Neglect", sub:"Early support gap · attendance enforcement · deprioritizing education · late-stage neglect surfacing as \"disability\" claims",
+   quotes:["they need... helping hand from their parents, like by doing the homework","If they are telling... I'm not feeling well, they won't send the child to school","some parents... have neglected the needs of child in the lower classes"]},
+  {n:2, cat:"structural", name:"Socioeconomic Drivers of Dropout", sub:"Daily-wage labor vs. long-term payoff · immediate income logic",
+   quotes:["they are getting 1500 or 1000 or 2000... living a very happy life with that","they think it is not necessary getting educated... they use the priority to look for local jobs"]},
+  {n:3, cat:"social", name:"Peer Influence", sub:"Peer-driven dropout normalization · peer-assisted learning as remediation",
+   quotes:["the peer pressure will be also there, most of the children think the same","I will seek the help of peer groups... empathetic and patient peers"]},
+  {n:4, cat:"policy", name:"Bureaucratic Friction as Retention Tool", sub:"Sampurna tracking software · mandatory dropout paperwork · deliberate procedural delay",
+   quotes:["it has to be sent to the district education office, and they have to sanction it","they will think... we don't have time to go through all this clerical formalities. So that will be delayed"]},
+  {n:5, cat:"policy", name:"Government Welfare & Safety-Net Systems", sub:"Childline (1090) · hostel/counseling · scholarships · reservation-linked motivation",
+   quotes:["any child can directly call and talk to the... office","if income is less than two and a half [lakh], they will be getting scholarships"]},
+  {n:6, cat:"policy", name:"Effectiveness of Child-Protection Systems", sub:"Case example: tracked/rescued student · counseling/mediation process",
+   quotes:["the police... tracked her back to the school","there is a court-like room... judges will be there, counseling sessions will be there"]},
+  {n:7, cat:"tech", name:"Technology's Impact on Learning", sub:"Pre/post-AI · erosion of original effort · AI-assisted homework",
+   quotes:["those assignments... were most genuine... rather than any internet or a platforms","they will be searching everything about the subject from the AI"]},
+  {n:8, cat:"social", name:"Changing Student Aspirations", sub:"Decline in career anxiety · rise of content-creation goals",
+   quotes:["children are not at all bothered about what they are going to become in the future","we will be creating videos in Instagram or YouTube, and we will be getting more money"]},
+  {n:9, cat:"tech", name:"Digital Access & Equity", sub:"Near-universal smartphone access · low-stakes tool needs at school level",
+   quotes:["they do have access to all these platforms... a smartphone is available to each and every one of us"]},
+  {n:10, cat:"pedagogy", name:"Differentiated Instruction", sub:"Screening · simplified content · \"one point = one mark\" · reduced-step math",
+   quotes:["in the initial two months, June and July, I will be screening the students","one point means one mark. So the child won't write it like in a big paragraph"]},
+  {n:11, cat:"pedagogy", name:"Peer-Assisted Learning", sub:"Empathetic peer pairing as low-resource strategy",
+   quotes:["we will ask the help of our friends rather than the teacher","the child is having some disability, if we together will help her"]},
+  {n:12, cat:"policy", name:"Disability Identification & Accommodation", sub:"Resource teacher · psychologist · scribes · extended time · grace marks",
+   quotes:["a resource teacher is available... she will also do some test, whether the child is suffering from any kind of disability","there will be given extra time and grace mark"]},
+  {n:13, cat:"family", name:"Systemic Misuse of Welfare Policy", sub:"Late disability certification as a workaround for prior neglect",
+   quotes:["one percentage of the parents or students are misusing this... she has been neglected during the lower grade","they just use this, misuse the system to just get them to pass"]},
+  {n:14, cat:"policy", name:"Structural Stigma Around Certification", sub:"Aadhaar-linked certificate restricting opportunities (e.g., driving license) · fear-driven avoidance",
+   quotes:["that disability certificate should be linked to the [Aadhaar]... they can take a driving license","nowadays, people are more scared of taking this certificate"]},
+  {n:15, cat:"structural", name:"Class Size & Resource Constraints", sub:"Structural driver behind adaptive strategies",
+   quotes:["a teacher will get only 45 minutes in a class","only 45 minutes are allowed for us... and there are 40 students in my class"]},
+];
+
+const grid = document.getElementById('grid');
+codes.forEach(c=>{
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.cat = c.cat;
+  card.innerHTML = `
+    <div class="card-inner">
+      <div class="face front">
+        <span class="n">#${c.n}</span>
+        <h4>${c.name}</h4>
+        <span class="sub">tap to reveal quotes ▸</span>
+      </div>
+      <div class="face back">
+        <div class="subc">${c.sub}</div>
+        ${c.quotes.map(q=>`<blockquote>"${q}"</blockquote>`).join('')}
+      </div>
+    </div>`;
+  grid.appendChild(card);
+});
+
+let seen = new Set();
+const xpEl = document.getElementById('xpCounter');
+const barFill = document.getElementById('barFill');
+document.querySelectorAll('.card').forEach((card, i)=>{
+  card.addEventListener('click', ()=>{
+    card.classList.toggle('flip');
+    if(!seen.has(i)){ seen.add(i); xpEl.textContent = 'Codes explored: '+seen.size+'/15'; barFill.style.width = (seen.size/15*100)+'%'; }
+  });
+});
+
+const cats = [...new Set(codes.map(c=>c.cat))];
+const chipsEl = document.getElementById('chips');
+const allChip = document.createElement('div'); allChip.className='chip active'; allChip.textContent='All'; chipsEl.appendChild(allChip);
+cats.forEach(cat=>{
+  const chip = document.createElement('div');
+  chip.className='chip'; chip.textContent = cat[0].toUpperCase()+cat.slice(1);
+  chip.dataset.cat = cat;
+  chipsEl.appendChild(chip);
+});
+chipsEl.addEventListener('click', e=>{
+  if(!e.target.classList.contains('chip')) return;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  e.target.classList.add('active');
+  const cat = e.target.dataset.cat;
+  document.querySelectorAll('.card').forEach(card=>{
+    card.style.display = (!cat || card.dataset.cat===cat) ? '' : 'none';
+  });
+});
+</script>
+</body>
+</html>
