@@ -1,0 +1,539 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Saathi Shrinking Circle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Young+Serif&display=swap">
+<style>
+/* Layout: sticky control bar (week + Saathi on/off) over five tabs; Circle Map is the hero, others read from the same state. */
+:root{
+  --bg:#F2F4F0; --surface:#FFFFFF; --ink:#16292B; --muted:#586968; --line:#D5DCD6;
+  --teal:#1D6B66; --teal-soft:#D8ECE8; --gold:#C98F00; --gold-soft:#FBEBC2;
+  --alert:#B4432F; --alert-soft:#F6DDD6; --on-teal:#FFFFFF;
+  --display:"Young Serif",Georgia,serif; --body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101B1C; --surface:#172628; --ink:#E6EFEC; --muted:#9DB0AC; --line:#2B3F40;
+  --teal:#4FB5AC; --teal-soft:#1F3D3B; --gold:#F0B429; --gold-soft:#3F3413;
+  --alert:#E5846F; --alert-soft:#40231D; --on-teal:#0C1A1B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101B1C; --surface:#172628; --ink:#E6EFEC; --muted:#9DB0AC; --line:#2B3F40;
+  --teal:#4FB5AC; --teal-soft:#1F3D3B; --gold:#F0B429; --gold-soft:#3F3413;
+  --alert:#E5846F; --alert-soft:#40231D; --on-teal:#0C1A1B; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-block:0 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:1.9rem} h2{font-size:1.35rem} h3{font-size:1.05rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.tag{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+header.top{padding-block:22px 14px;display:flex;flex-wrap:wrap;gap:8px 24px;align-items:baseline;justify-content:space-between}
+header.top .sub{max-width:52ch}
+.persona{font-size:.85rem;color:var(--muted)}
+
+.ctrl{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-block:1px solid var(--line);
+  padding-block:10px;display:flex;flex-wrap:wrap;gap:10px 28px;align-items:center}
+.ctrl .week{display:flex;align-items:center;gap:12px;flex:1 1 280px;min-width:0}
+.ctrl input[type=range]{flex:1;min-width:0;accent-color:var(--teal)}
+.ctrl .wk{font-variant-numeric:tabular-nums;font-weight:600;min-width:5.5ch}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:7px 14px;font-weight:600;font-size:.88rem}
+.seg button[aria-pressed=true]{background:var(--teal);color:var(--on-teal)}
+.seg button[data-v=off][aria-pressed=true]{background:var(--alert);color:var(--surface)}
+
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-block:12px 0;border-bottom:1px solid var(--line)}
+nav.tabs button{border:0;background:transparent;padding:10px 14px;font-weight:600;color:var(--muted);white-space:nowrap;
+  border-bottom:3px solid transparent;margin-bottom:-1px}
+nav.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--teal)}
+
+main{padding-block:22px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:780px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.note{font-size:.84rem;color:var(--muted)}
+.hint{background:var(--gold-soft);border-radius:8px;padding:10px 14px;font-size:.9rem}
+
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{padding:12px 14px}
+.stat b{display:block;font-family:var(--display);font-weight:400;font-size:1.7rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:.78rem;color:var(--muted)}
+.stat.bad b{color:var(--alert)} .stat.good b{color:var(--teal)}
+
+svg text{font-family:var(--body)}
+.map{width:100%;height:auto;display:block;max-width:560px;margin:0 auto}
+.ring{fill:none;stroke:var(--line);stroke-width:1.5}
+.ringlab{font-size:10px;fill:var(--muted);letter-spacing:.06em}
+.node{cursor:pointer}
+.node .dot{stroke-width:2}
+.node.active .dot{fill:var(--teal-soft);stroke:var(--teal)}
+.node.fading .dot{fill:var(--gold-soft);stroke:var(--gold);stroke-dasharray:4 3}
+.node.lapsed .dot{fill:var(--bg);stroke:var(--alert);stroke-dasharray:3 4}
+.node.absent .dot{fill:none;stroke:var(--muted);stroke-dasharray:2 4}
+.node .ini{font-size:11px;font-weight:600;text-anchor:middle;fill:var(--ink)}
+.node.lapsed .ini,.node.absent .ini{fill:var(--muted)}
+.node .nm{font-size:10.5px;text-anchor:middle;fill:var(--ink)}
+.node.lapsed .nm{fill:var(--muted)}
+.node.sel .dot{stroke-width:3.5}
+.glow{fill:var(--gold);opacity:.22}
+.me{fill:var(--teal)} .metx{fill:var(--on-teal);font-size:13px;font-weight:600;text-anchor:middle}
+
+.pill{display:inline-block;border-radius:99px;padding:2px 10px;font-size:.78rem;font-weight:600}
+.pill.active{background:var(--teal-soft);color:var(--teal)}
+.pill.fading{background:var(--gold-soft);color:var(--ink)}
+.pill.lapsed{background:var(--alert-soft);color:var(--alert)}
+.pill.absent{background:var(--line);color:var(--muted)}
+.btn{border:1px solid var(--teal);background:var(--teal);color:var(--on-teal);border-radius:8px;padding:8px 14px;font-weight:600;font-size:.9rem}
+.btn.ghost{background:transparent;color:var(--teal)}
+.spark{width:100%;height:auto;display:block}
+.spark .gl{stroke:var(--line);stroke-width:1}
+.spark .lab{font-size:10px;fill:var(--muted)}
+.spark .off{fill:none;stroke:var(--alert);stroke-width:2.2}
+.spark .on{fill:none;stroke:var(--teal);stroke-width:2.6}
+.spark .base{stroke:var(--muted);stroke-dasharray:4 4;stroke-width:1}
+.spark .now{stroke:var(--gold);stroke-width:2}
+.spark circle.o{fill:var(--alert)} .spark circle.n{fill:var(--teal)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.82rem;color:var(--muted);margin-top:6px}
+.sw{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.sw.off{background:var(--alert)} .sw.on{background:var(--teal)}
+
+ul.ev{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ul.ev li{display:grid;grid-template-columns:4.2rem minmax(0,1fr);gap:8px;font-size:.9rem}
+ul.ev .w{font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
+ul.ev li.saathi .w{color:var(--teal)} ul.ev li.bad .w{color:var(--alert)}
+
+.chat{display:flex;flex-direction:column;gap:10px}
+.b{max-width:86%;padding:10px 14px;border-radius:14px;font-size:.95rem}
+.b.s{background:var(--teal-soft);align-self:flex-start;border-bottom-left-radius:4px}
+.b.u{background:var(--gold-soft);align-self:flex-end;border-bottom-right-radius:4px}
+.replies{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{display:inline-block;border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:5px 12px;font-size:.85rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+
+.rungs{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.rung{display:grid;grid-template-columns:2.2rem minmax(0,1fr);gap:12px;padding:14px 16px;border:1px dashed var(--line);border-radius:10px;background:var(--surface)}
+.rung .n{font-family:var(--display);font-size:1.5rem;color:var(--muted);line-height:1}
+.rung.hit{border-style:solid;border-color:var(--teal);background:var(--teal-soft)}
+.rung.hit .n{color:var(--teal)}
+.rung .who{font-size:.84rem;color:var(--muted);margin-top:4px}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.88rem}
+th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--line)}
+th{font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.scroll{overflow-x:auto}
+
+.tg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;align-items:center;padding-block:12px;border-bottom:1px solid var(--line)}
+.tg:last-child{border-bottom:0}
+.sw2{width:46px;height:26px;border-radius:99px;border:1px solid var(--line);background:var(--line);position:relative;padding:0}
+.sw2::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--surface);transition:transform .15s}
+.sw2[aria-checked=true]{background:var(--teal);border-color:var(--teal)}
+.sw2[aria-checked=true]::after{transform:translateX(20px)}
+.never{display:flex;flex-wrap:wrap;gap:8px}
+.never .chip{background:var(--alert-soft);border-color:transparent;color:var(--ink)}
+.big{font-family:var(--display);font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.sel-title{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="tag">Prototype · simulated data</div>
+      <h1>Saathi</h1>
+      <p class="sub muted">Notices when an older person's world is getting smaller, then helps it grow again.</p>
+    </div>
+    <p class="persona">Persona: <b>Meena, 72</b>, widowed, Bengaluru. Son Ravi lives in Hyderabad.</p>
+  </header>
+
+  <div class="ctrl" role="group" aria-label="Simulation controls">
+    <div class="week">
+      <label for="wk" class="tag">Week</label>
+      <input id="wk" type="range" min="0" max="12" step="1" value="6">
+      <span class="wk" id="wkv">Week 6</span>
+    </div>
+    <div class="seg" role="group" aria-label="Saathi support">
+      <button type="button" data-v="off" id="b-off" aria-pressed="true">Without Saathi</button>
+      <button type="button" data-v="on" id="b-on" aria-pressed="false">With Saathi</button>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Prototype screens">
+    <button role="tab" data-t="circle">Circle map</button>
+    <button role="tab" data-t="checkin">Weekly check-in</button>
+    <button role="tab" data-t="family">Family digest</button>
+    <button role="tab" data-t="ladder">Response ladder</button>
+    <button role="tab" data-t="privacy">Consent &amp; privacy</button>
+  </nav>
+
+  <main>
+    <section id="p-circle" hidden>
+      <div class="grid2">
+        <div class="stack">
+          <div class="hint" id="hint"></div>
+          <div class="card">
+            <svg id="map" class="map" viewBox="0 0 460 460" role="img" aria-label="Meena's social circle in three rings"></svg>
+            <p class="note" style="text-align:center">Filled = in touch this week. Dashed amber = about to lapse. Dashed red = quiet. Tap a person.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="stats" id="stats"></div>
+          <div class="card" id="selcard"></div>
+          <div class="card">
+            <div class="tag">People in touch, weeks 0 to 12</div>
+            <svg id="spark" class="spark" viewBox="0 0 560 170" role="img" aria-label="Number of active contacts by week with and without Saathi"></svg>
+            <div class="legend"><span><i class="sw off"></i>Without Saathi</span><span><i class="sw on"></i>With Saathi</span><span>Dashed line: baseline of 8</span></div>
+          </div>
+          <div class="card"><div class="tag" style="margin-bottom:10px" id="evt">What happened</div><ul class="ev" id="events"></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="p-checkin" hidden>
+      <div class="grid2">
+        <div class="card">
+          <div class="sel-title" style="margin-bottom:12px">
+            <h2>Sunday check-in</h2>
+            <div class="seg" id="langseg" role="group" aria-label="Language">
+              <button type="button" data-l="en" aria-pressed="true">English</button>
+              <button type="button" data-l="hi" aria-pressed="false">हिन्दी</button>
+              <button type="button" data-l="kn" aria-pressed="false">ಕನ್ನಡ</button>
+            </div>
+          </div>
+          <div class="chat" id="chat" aria-live="polite"></div>
+          <div class="replies" id="replies"></div>
+          <p class="note" style="margin-top:14px">In the real service Meena answers by voice or WhatsApp voice note, in her language. Taps stand in for speech here. The first prompt switches language; the build localises every prompt.</p>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <div class="tag" style="margin-bottom:10px">Logged this week</div>
+            <div class="chips" id="logged"></div>
+            <p class="note" id="loggedempty">Nothing yet. Reply to Saathi to see what it records.</p>
+          </div>
+          <div class="card">
+            <h3>Designed to feel like a call, not a test</h3>
+            <ul class="note" style="padding-left:18px;margin:8px 0 0">
+              <li>Two minutes, once a week, at a time Meena picks.</li>
+              <li>No quiz questions. Saathi asks about people, not memory.</li>
+              <li>Saying "not today" is always fine and is never reported as a problem.</li>
+              <li>Audio is not kept. Only names and contact counts are logged.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="p-family" hidden>
+      <div class="grid2">
+        <div class="stack"><h2>What Ravi sees</h2><div id="digest" class="stack"></div></div>
+        <div class="stack">
+          <div class="card"><h3>What the family never sees</h3>
+            <div class="never" style="margin-top:10px"><span class="chip">Audio</span><span class="chip">What was said</span><span class="chip">Any score</span><span class="chip">Any diagnosis</span></div>
+            <p class="note" style="margin-top:10px">The digest shows change and offers things to say. It does not label Meena. What she shares is set on the Consent tab.</p>
+          </div>
+          <div class="card" id="digestnote"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="p-ladder" hidden>
+      <div class="stack">
+        <div><h2>Response ladder</h2><p class="muted" style="margin-top:6px;max-width:60ch">Each rung unlocks when Meena's circle drops further below her own baseline of 8 people. Every rung routes to humans.</p></div>
+        <div class="hint" id="ladderhint"></div>
+        <ol class="rungs" id="rungs"></ol>
+        <div class="card"><h3>Honest limits and how the design handles them</h3>
+          <div class="scroll" style="margin-top:10px"><table>
+            <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+            <tbody>
+              <tr><td>Not a diagnosis. Social and speech signals are not clinically validated.</td><td>Output is "change from your own baseline". The last step is a referral to a professional, never a label.</td></tr>
+              <tr><td>Natural shrinkage: bereavement, a move, illness.</td><td>Meena can mark someone as "passed away" or "moved". That person leaves the baseline and no alert fires.</td></tr>
+              <tr><td>False alarms scare families.</td><td>Persistence window of several weeks, a human coordinator confirms before rung 5. This demo compresses time.</td></tr>
+              <tr><td>Surveillance feeling.</td><td>Meena owns her map, chooses what is shared, and can delete everything.</td></tr>
+              <tr><td>AI replaces human contact.</td><td>Success metric is human contacts per week. Saathi's job is to hand over to people.</td></tr>
+              <tr><td>Digital exclusion.</td><td>Works on any phone through voice calls. Family can help set up. Language chosen by Meena.</td></tr>
+            </tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="p-privacy" hidden>
+      <div class="grid2">
+        <div class="card">
+          <h2>Meena's consent settings</h2>
+          <p class="note" style="margin:6px 0 4px">Changes apply to the Family digest right away.</p>
+          <div id="toggles"></div>
+        </div>
+        <div class="stack">
+          <div class="card"><h3>Principles</h3>
+            <ul class="note" style="padding-left:18px;margin:8px 0 0">
+              <li>The older person owns the data and the map.</li>
+              <li>Family sees counts by default. Names only if Meena says so.</li>
+              <li>Opt-in for every passive signal, one at a time.</li>
+              <li>Delete everything at any time.</li>
+            </ul>
+          </div>
+          <div class="card"><button class="btn ghost" id="del" type="button">Delete all my data</button><p class="note" id="delmsg" style="margin-top:10px">Demo only. Nothing is stored in this prototype.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <p class="note">Simulated persona and data. No calls are placed and no information is collected. Evidence references and pilot design belong in the written submission.</p>
+</div>
+
+<script>
+(function(){
+  var BASE = 8;
+  var C = [
+    {id:'ravi',n:'Ravi',rel:'Son, Hyderabad',ring:1,a:300,lapse:99},
+    {id:'priya',n:'Priya',rel:'Granddaughter',ring:1,a:60,lapse:99},
+    {id:'lata',n:'Lata',rel:'Friend since college',ring:2,a:20,lapse:4,back:5},
+    {id:'sunita',n:'Sunita',rel:'Neighbour, flat 2B',ring:2,a:110,lapse:6,back:7},
+    {id:'iyer',n:'Mrs. Iyer',rel:'Temple bhajan group',ring:2,a:200,lapse:3,back:5},
+    {id:'karthik',n:'Karthik',rel:'Student skill-swap buddy',ring:2,a:290,join:6},
+    {id:'rao',n:'Dr. Rao',rel:'Former colleague',ring:3,a:40,lapse:2},
+    {id:'shanta',n:'Shanta',rel:'Cousin, Mysuru',ring:3,a:130,lapse:5,back:9},
+    {id:'raju',n:'Raju',rel:'Vegetable vendor',ring:3,a:230,lapse:7}
+  ];
+  var EV = [
+    {w:2,s:'both',k:'bad',t:'Dr. Rao stops calling.'},
+    {w:3,s:'both',k:'bad',t:'Mrs. Iyer and the bhajan group go quiet.'},
+    {w:3,s:'on',k:'saathi',t:'Saathi offers Meena help to call Mrs. Iyer.'},
+    {w:4,s:'both',k:'bad',t:'Lata has not called in weeks.'},
+    {w:4,s:'on',k:'saathi',t:'With Meena\'s consent, Ravi gets a digest with things to say.'},
+    {w:5,s:'both',k:'bad',t:'Cousin Shanta drops off.'},
+    {w:5,s:'off',k:'bad',t:'Circle is at 4 of 8. Nobody has noticed.'},
+    {w:5,s:'on',k:'saathi',t:'Meena calls Lata and Mrs. Iyer with Saathi\'s help.'},
+    {w:6,s:'both',k:'bad',t:'Sunita, the neighbour, stops dropping by.'},
+    {w:6,s:'on',k:'saathi',t:'Karthik, a student buddy, is matched. First visit is a group visit.'},
+    {w:7,s:'both',k:'bad',t:'Raju the vendor is no longer in touch (a move). Natural change.'},
+    {w:7,s:'on',k:'saathi',t:'Sunita is back after a nudge.'},
+    {w:9,s:'on',k:'saathi',t:'Shanta reconnects on a festival reminder.'},
+    {w:11,s:'on',k:'saathi',t:'Circle holds at 7 of 8. No referral needed.'}
+  ];
+  var RUNGS = [
+    {t:'Warm weekly check-in',d:'A two-minute friendly call in Meena\'s language.',w:'Sees: Meena only.',at:0},
+    {t:'Gentle nudge to Meena',d:'"Lata has not called in 3 weeks. Shall I ring her?" Saathi dials only if she says yes.',w:'Sees: Meena only.',at:2},
+    {t:'Reconnection help and a skill-swap buddy',d:'Prompts to lapsed contacts. A student visits to learn a recipe and helps with the phone. A coordinator joins the first visit.',w:'Sees: Meena, the contact, the volunteer coordinator.',at:2},
+    {t:'Consented family digest',d:'Counts, a trend and conversation starters. Names only if Meena allows.',w:'Sees: Ravi, within Meena\'s consent.',at:3},
+    {t:'Suggest a professional check',d:'Persistent change leads to a suggestion to add a memory and mood screening to a routine check-up. Framed as a conversation, not a result.',w:'Sees: Meena and Ravi, then her doctor if she agrees.',at:4}
+  ];
+  var CALLS_OFF=[4,4,3,3,3,2,2,2,1,1,1,1,1], CALLS_ON=[4,4,3,3,3,3,3,3,4,4,4,4,4];
+  var GREET = {en:'Namaste Meena! Who did you talk to this week?',hi:'नमस्ते मीना जी! इस हफ़्ते आपने किस-किस से बात की?',kn:'ನಮಸ್ಕಾರ ಮೀನಾ ಅವರೇ! ಈ ವಾರ ನೀವು ಯಾರ ಜೊತೆ ಮಾತನಾಡಿದಿರಿ?'};
+
+  var S = {week:6,on:false,sel:'lata',tab:'circle',lang:'en',
+    prefs:{count:true,names:false,calls:false,buddy:true},
+    chat:null};
+
+  function $(s){return document.querySelector(s)}
+  function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+  function status(c,w,on){
+    if(c.join){ return (on && S.prefs.buddy && w>=c.join) ? 'active' : 'absent'; }
+    var act = w < c.lapse;
+    if(!act && on && c.back && w>=c.back) act = true;
+    if(act) return (w===c.lapse-1) ? 'fading' : 'active';
+    return 'lapsed';
+  }
+  function count(w,on){var n=0;C.forEach(function(c){var s=status(c,w,on);if(s==='active'||s==='fading')n++});return n}
+  function drop(w,on){return BASE-count(w,on)}
+  function hits(d){return RUNGS.map(function(r){return d>=r.at && (r.at>0 || true)})}
+  function wordsSince(c,w){return Math.max(1,w-c.lapse+1)}
+
+  /* ---------- circle map ---------- */
+  var CX=230,CY=230,R={1:62,2:120,3:176};
+  function pos(c){var a=c.a*Math.PI/180;return [CX+R[c.ring]*Math.sin(a),CY-R[c.ring]*Math.cos(a)]}
+  function initials(n){return n.replace(/Mrs\. |Dr\. /,'').slice(0,2)}
+  function drawMap(){
+    var h='';
+    [3,2,1].forEach(function(r){h+='<circle class="ring" cx="'+CX+'" cy="'+CY+'" r="'+R[r]+'"/>'});
+    h+='<text class="ringlab" x="'+(CX+4)+'" y="'+(CY-R[1]+12)+'">DAILY</text>';
+    h+='<text class="ringlab" x="'+(CX+4)+'" y="'+(CY-R[2]+12)+'">WEEKLY</text>';
+    h+='<text class="ringlab" x="'+(CX+4)+'" y="'+(CY-R[3]+12)+'">OCCASIONAL</text>';
+    h+='<circle class="glow" cx="'+CX+'" cy="'+CY+'" r="38"/><circle class="me" cx="'+CX+'" cy="'+CY+'" r="26"/><text class="metx" x="'+CX+'" y="'+(CY+5)+'">Meena</text>';
+    C.forEach(function(c){
+      var p=pos(c),st=status(c,S.week,S.on),sel=S.sel===c.id?' sel':'';
+      var nm=c.id==='karthik'&&st==='absent'?'open seat':c.n;
+      h+='<g class="node '+st+sel+'" data-id="'+c.id+'" tabindex="0" role="button" aria-label="'+esc(c.n+', '+st)+'">';
+      h+='<circle class="dot" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="17"/>';
+      h+='<text class="ini" x="'+p[0].toFixed(1)+'" y="'+(p[1]+4).toFixed(1)+'">'+(st==='absent'?'+':esc(initials(c.n)))+'</text>';
+      h+='<text class="nm" x="'+p[0].toFixed(1)+'" y="'+(p[1]+32).toFixed(1)+'">'+esc(nm)+'</text></g>';
+    });
+    $('#map').innerHTML=h;
+  }
+  function drawStats(){
+    var n=count(S.week,S.on),d=BASE-n,hit=hits(d),top=0;
+    hit.forEach(function(x,i){if(x)top=i});
+    var cls=d>=3?'bad':(d<=1?'good':'');
+    $('#stats').innerHTML=
+      '<div class="card stat '+cls+'"><b>'+n+' of '+BASE+'</b><span>people in touch</span></div>'+
+      '<div class="card stat '+(d>=2?'bad':'')+'"><b>'+(d>0?'-'+d:'0')+'</b><span>vs her baseline</span></div>'+
+      '<div class="card stat"><b>'+(top+1)+' of 5</b><span>ladder rung reached</span></div>';
+    var h = S.on
+      ? 'Saathi is on. Scrub the weeks to watch lapsed ties come back and the ladder ease off.'
+      : 'This is today\'s reality: the circle shrinks and nobody notices. Switch to <b>With Saathi</b> to see the difference.';
+    $('#hint').innerHTML=h;
+  }
+  function drawSel(){
+    var c=C.filter(function(x){return x.id===S.sel})[0],st=status(c,S.week,S.on),h='';
+    var label={active:'In touch',fading:'About to lapse',lapsed:'Quiet',absent:'Not matched yet'}[st];
+    h+='<div class="sel-title"><h3>'+esc(c.n)+'</h3><span class="pill '+st+'">'+label+'</span></div>';
+    h+='<p class="muted" style="margin-top:4px">'+esc(c.rel)+'</p>';
+    if(st==='lapsed'){
+      var back=c.back&&S.on?'Saathi will help reconnect in week '+c.back+'.':(S.on?'Natural change. Meena can mark this person as moved or passed away.':'Nobody is helping this tie come back.');
+      h+='<p style="margin-top:10px">No contact for about '+wordsSince(c,S.week)+' week'+(wordsSince(c,S.week)>1?'s':'')+'. '+back+'</p>';
+      h+='<div style="margin-top:12px"><button class="btn" id="callbtn" type="button" '+(S.on?'':'disabled style="opacity:.5;cursor:not-allowed"')+'>Ask Saathi to call '+esc(c.n)+'</button></div>';
+      h+='<p class="note" id="callmsg" style="margin-top:8px">'+(S.on?'':'Available with Saathi.')+'</p>';
+    } else if(st==='absent'){
+      h+='<p style="margin-top:10px">'+(S.prefs.buddy?'Saathi matches a student who wants to learn from Meena and helps with her phone in return.':'Buddy matching is switched off in Meena\'s consent settings.')+'</p>';
+    } else {
+      h+='<p style="margin-top:10px">Contact looks healthy this week.</p>';
+    }
+    $('#selcard').innerHTML=h;
+    var b=$('#callbtn'); if(b&&S.on) b.onclick=function(){$('#callmsg').textContent='Prototype: after Meena says yes, Saathi would dial '+c.n+' from her phone and stay off the line.'};
+  }
+  function drawSpark(){
+    var W=560,H=170,L=28,Rr=12,T=12,B=24,pw=W-L-Rr,ph=H-T-B;
+    function X(w){return L+pw*w/12} function Y(v){return T+ph*(1-v/9)}
+    var h='';
+    [0,3,6,9].forEach(function(v){h+='<line class="gl" x1="'+L+'" x2="'+(W-Rr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text class="lab" x="'+(L-6)+'" y="'+(Y(v)+3)+'" text-anchor="end">'+v+'</text>'});
+    h+='<line class="base" x1="'+L+'" x2="'+(W-Rr)+'" y1="'+Y(BASE)+'" y2="'+Y(BASE)+'"/>';
+    for(var w=0;w<=12;w+=2) h+='<text class="lab" x="'+X(w)+'" y="'+(H-6)+'" text-anchor="middle">'+w+'</text>';
+    function line(on){var d='';for(var w=0;w<=12;w++){d+=(w?'L':'M')+X(w).toFixed(1)+' '+Y(count(w,on)).toFixed(1)}return d}
+    h+='<path class="off" d="'+line(false)+'"/><path class="on" d="'+line(true)+'"/>';
+    h+='<line class="now" x1="'+X(S.week)+'" x2="'+X(S.week)+'" y1="'+T+'" y2="'+(H-B)+'"/>';
+    h+='<circle class="o" cx="'+X(S.week)+'" cy="'+Y(count(S.week,false))+'" r="4.5"/><circle class="n" cx="'+X(S.week)+'" cy="'+Y(count(S.week,true))+'" r="4.5"/>';
+    $('#spark').innerHTML=h;
+  }
+  function eventsFor(){return EV.filter(function(e){return e.w<=S.week&&(e.s==='both'||e.s===(S.on?'on':'off'))}).reverse()}
+  function drawEvents(){
+    var e=eventsFor();
+    $('#evt').textContent='What happened by week '+S.week+(S.on?' (with Saathi)':' (without Saathi)');
+    $('#events').innerHTML=e.length?e.map(function(x){return '<li class="'+x.k+'"><span class="w">Week '+x.w+'</span><span>'+esc(x.t)+'</span></li>'}).join(''):'<li><span class="w"></span><span class="muted">Nothing unusual yet. Move the week slider.</span></li>';
+  }
+
+  /* ---------- check-in ---------- */
+  function chatInit(){
+    S.chat={msgs:[{f:'s',t:GREET[S.lang]}],step:0,chips:[],
+      replies:[{t:'Ravi called on Sunday'},{t:'Only Ravi, really'}]};
+  }
+  function reply(i){
+    var c=S.chat,r=c.replies[i];if(!r)return;
+    c.msgs.push({f:'u',t:r.t});
+    if(c.step===0){
+      c.chips.push('Ravi · daily ring · talked this week');
+      c.msgs.push({f:'s',t:'Lovely, a Sunday call with Ravi. Lata has been quiet for a few weeks. Shall I ring her for you?'});
+      c.replies=[{t:'Yes, call her',y:1},{t:'Not today'}];c.step=1;
+    } else if(c.step===1){
+      if(r.y){c.chips.push('Lata · weekly ring · reconnected');c.msgs.push({f:'s',t:'Calling Lata now. (Prototype: no call is placed.) She was happy to hear from you.'});}
+      else c.msgs.push({f:'s',t:'No problem. I will not push. We can try again next Sunday.'});
+      c.msgs.push({f:'s',t:'One more idea. Karthik, a college student nearby, wants to learn your rasam recipe and can help with your phone. Would you like to meet him?'});
+      c.replies=[{t:'Yes, set it up',y:1},{t:'Maybe later'}];c.step=2;
+    } else if(c.step===2){
+      if(r.y){c.chips.push('Karthik · weekly ring · first visit booked');c.msgs.push({f:'s',t:'Wonderful. A volunteer coordinator will join the first visit.'});}
+      else c.msgs.push({f:'s',t:'Of course. The offer stays open.'});
+      c.msgs.push({f:'s',t:'Thank you, Meena. That took about two minutes. Talk next Sunday.'});
+      c.replies=[{t:'Start again',restart:1}];c.step=3;
+    } else { chatInit(); }
+    drawChat();
+  }
+  function drawChat(){
+    var c=S.chat;
+    $('#chat').innerHTML=c.msgs.map(function(m){return '<div class="b '+m.f+'" lang="'+(m.f==='s'&&c.msgs[0]===m?S.lang:'en')+'">'+esc(m.t)+'</div>'}).join('');
+    var rp=$('#replies');rp.innerHTML='';
+    c.replies.forEach(function(r,i){var b=document.createElement('button');b.type='button';b.className='btn'+(r.restart?' ghost':'');b.textContent=r.t;b.onclick=function(){reply(i)};rp.appendChild(b)});
+    $('#logged').innerHTML=c.chips.map(function(x){return '<span class="chip">'+esc(x)+'</span>'}).join('');
+    $('#loggedempty').hidden=c.chips.length>0;
+  }
+
+  /* ---------- family digest ---------- */
+  function drawFamily(){
+    var n=count(S.week,S.on),d=BASE-n,p=S.prefs,h='';
+    if(!S.on){
+      $('#digest').innerHTML='<div class="card"><h3>Nothing reaches Ravi</h3><p class="muted" style="margin-top:8px">Without Saathi there is no digest. Ravi finds out only if Meena mentions it, which loneliness makes less likely. At week '+S.week+' her circle is at '+n+' of '+BASE+'.</p></div>';
+      $('#digestnote').innerHTML='<h3>Turn on Saathi</h3><p class="note" style="margin-top:8px">Switch to <b>With Saathi</b> at the top to see the digest Ravi would get.</p>';
+      return;
+    }
+    if(!p.count){
+      h='<div class="card"><h3>Meena has not shared her circle this week</h3><p class="muted" style="margin-top:8px">You can see that she checked in. Her circle stays private, and that is her right. A phone call is always welcome.</p></div>';
+      $('#digest').innerHTML=h;
+      $('#digestnote').innerHTML='<h3>Consent is respected</h3><p class="note" style="margin-top:8px">Saathi still helps Meena directly. It does not go around her.</p>';
+      return;
+    }
+    var lapsed=C.filter(function(c){return status(c,S.week,true)==='lapsed'}).map(function(c){return c.n});
+    var tone=d>=4?'Her circle is noticeably smaller than usual':(d>=3?'Her circle has shrunk':(d>=2?'Her circle is a little smaller':'Her circle looks steady'));
+    h+='<div class="card"><div class="tag">Week '+S.week+'</div><div class="big" style="margin-top:6px">'+n+' of '+BASE+'</div><p class="muted">people Meena has been in touch with. '+tone+'.</p>';
+    if(p.names) h+='<p style="margin-top:10px"><b>Quiet for a while:</b> '+(lapsed.length?esc(lapsed.join(', ')):'nobody')+'</p>';
+    else h+='<p class="note" style="margin-top:10px">Names are private. Meena can choose to share them.</p>';
+    if(p.calls) h+='<p class="note" style="margin-top:8px">Phone calls to family this week: '+CALLS_ON[S.week]+' (counts only).</p>';
+    h+='</div>';
+    var say=d>=4?['Suggest adding a memory and mood screening to her next routine check-up, as ordinary preventive care.','Offer to go with her. This is about change over time, not a diagnosis.']
+      :d>=3?['Ask who she has not spoken to lately and offer to set up a call together.','Visit or video-call this weekend if you can.']
+      :d>=2?['Ask about her bhajan group and what she has been cooking.','Mention you would like to hear how Lata is.']
+      :['Ask what she has been cooking this week.'];
+    h+='<div class="card"><h3>Things you could say</h3><ul style="padding-left:18px;margin:8px 0 0">'+say.map(function(s){return '<li>'+esc(s)+'</li>'}).join('')+'</ul></div>';
+    var did=eventsFor().filter(function(e){return e.k==='saathi'}).slice(0,3);
+    h+='<div class="card"><h3>Already done by Saathi</h3><ul class="ev" style="margin-top:10px">'+(did.length?did.map(function(x){return '<li class="saathi"><span class="w">Week '+x.w+'</span><span>'+esc(x.t)+'</span></li>'}).join(''):'<li><span class="w"></span><span class="muted">Nothing needed yet.</span></li>')+'</ul></div>';
+    $('#digest').innerHTML=h;
+    $('#digestnote').innerHTML='<h3>Why a digest and not an alert</h3><p class="note" style="margin-top:8px">Alerts create panic. A digest keeps the family steady and gives them something kind to do next.</p>';
+  }
+
+  /* ---------- ladder ---------- */
+  function drawLadder(){
+    var d=drop(S.week,S.on);
+    $('#ladderhint').innerHTML=S.on?('Week '+S.week+' with Saathi: <b>'+(BASE-count(S.week,true))+' below baseline</b>. Highlighted rungs are active.')
+      :('Week '+S.week+' without Saathi: <b>'+d+' below baseline</b>. These rungs would have triggered, but without Saathi none of them happens.');
+    $('#rungs').innerHTML=RUNGS.map(function(r,i){
+      var on=d>=r.at;
+      return '<li class="rung'+(on?' hit':'')+'"><span class="n">'+(i+1)+'</span><div><h3>'+esc(r.t)+'</h3><p style="margin-top:4px">'+esc(r.d)+'</p><p class="who">'+esc(r.w)+(r.at?' Unlocks at '+r.at+' below baseline.':' Always on.')+'</p></div></li>';
+    }).join('');
+  }
+
+  /* ---------- privacy ---------- */
+  var TG=[
+    {k:'count',t:'Share my circle count with family',d:'Ravi sees how many people I am in touch with.'},
+    {k:'names',t:'Share names with family',d:'Off by default. Ravi sees who has gone quiet.'},
+    {k:'calls',t:'Count my calls to family',d:'Counts only, no content. Opt-in.'},
+    {k:'buddy',t:'Match me with a student buddy',d:'A group visit comes first, with a coordinator.'}
+  ];
+  function drawToggles(){
+    var el=$('#toggles');el.innerHTML='';
+    TG.forEach(function(x){
+      var row=document.createElement('div');row.className='tg';
+      row.innerHTML='<div><b>'+esc(x.t)+'</b><div class="note">'+esc(x.d)+'</div></div>';
+      var b=document.createElement('button');b.type='button';b.className='sw2';b.setAttribute('role','switch');b.setAttribute('aria-label',x.t);b.setAttribute('aria-checked',S.prefs[x.k]);
+      b.onclick=function(){S.prefs[x.k]=!S.prefs[x.k];render()};
+      row.appendChild(b);el.appendChild(row);
+    });
+  }
+
+  /* ---------- shell ---------- */
+  var TABS=['circle','checkin','family','ladder','privacy'];
+  function render(){
+    $('#wkv').textContent='Week '+S.week;$('#wk').value=S.week;
+    $('#b-on').setAttribute('aria-pressed',S.on);$('#b-off').setAttribute('aria-pressed',!S.on);
+    TABS.forEach(function(t){$('#p-'+t).hidden=S.tab!==t});
+    document.querySelectorAll('nav.tabs button').forEach(function(b){b.setAttribute('aria-selected',b.dataset.t===S.tab)});
+    document.querySelectorAll('#langseg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.l===S.lang)});
+    drawMap();drawStats();drawSel();drawSpark();drawEvents();drawChat();drawFamily();drawLadder();drawToggles();
+  }
+  function setTab(t){if(TABS.indexOf(t)<0)t='circle';S.tab=t;if(location.hash!=='#'+t){try{location.hash=t}catch(e){}}render()}
+
+  $('#wk').addEventListener('input',function(e){S.week=+e.target.value;render()});
+  $('#b-on').onclick=function(){S.on=true;render()};
+  $('#b-off').onclick=function(){S.on=false;render()};
+  document.querySelectorAll('nav.tabs button').forEach(function(b){b.onclick=function(){setTab(b.dataset.t)}});
+  document.querySelectorAll('#langseg button').forEach(function(b){b.onclick=function(){S.lang=b.dataset.l;chatInit();render()}});
+  $('#map').addEventListener('click',function(e){var g=e.target.closest('.node');if(g){S.sel=g.dataset.id;render()}});
+  $('#map').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){var g=e.target.closest('.node');if(g){e.preventDefault();S.sel=g.dataset.id;render();var again=document.querySelector('.node[data-id="'+S.sel+'"]');if(again)again.focus()}}});
+  $('#del').onclick=function(){$('#delmsg').textContent='In the real service this erases Meena\'s map, check-in log and shared digests. Nothing is stored here.'};
+  window.addEventListener('hashchange',function(){var t=location.hash.replace('#','');if(t&&t!==S.tab)setTab(t)});
+
+  chatInit();
+  var h0=location.hash.replace('#','');if(TABS.indexOf(h0)>=0)S.tab=h0;
+  render();
+})();
+</script>
+
+</body></html>
